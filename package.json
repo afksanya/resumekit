@@ -1,0 +1,25 @@
+{
+  "name": "resumekit",
+  "version": "0.1.0",
+  "description": "Local-first resume version manager and job application tracker.",
+  "type": "module",
+  "bin": {
+    "resumekit": "./bin/resumekit.js"
+  },
+  "scripts": {
+    "start": "node ./bin/resumekit.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "resume",
+    "cv",
+    "job-search",
+    "cli",
+    "local-first"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
