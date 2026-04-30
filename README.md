@@ -33,16 +33,13 @@ ResumeKit treats resumes more like code: structured, versioned, comparable, and 
 
 ```bash
 node ./bin/resumekit.js init
-node ./bin/resumekit.js version create frontend-intern
-node ./bin/resumekit.js export frontend-intern --format html --template modern
-node ./bin/resumekit.js export frontend-intern --format pdf
-node ./bin/resumekit.js apply add --company "Example Inc" --role "Frontend Intern" --version frontend-intern
-node ./bin/resumekit.js status
-node ./bin/resumekit.js validate frontend-intern
-node ./bin/resumekit.js diff base frontend-intern
+node ./bin/resumekit.js export base --format html
+node ./bin/resumekit.js validate base
 ```
 
-After installing globally, the same commands are available as:
+This creates a local `.resumekit` workspace, exports the sample resume to HTML, and checks what needs to be filled in.
+
+## Common Commands
 
 ```bash
 resumekit init
@@ -123,16 +120,13 @@ ResumeKit 的目标是：让简历像代码一样结构化、可版本化、可�
 
 ```bash
 node ./bin/resumekit.js init
-node ./bin/resumekit.js version create frontend-intern
-node ./bin/resumekit.js export frontend-intern --format html --template modern
-node ./bin/resumekit.js export frontend-intern --format pdf
-node ./bin/resumekit.js apply add --company "Example Inc" --role "Frontend Intern" --version frontend-intern
-node ./bin/resumekit.js status
-node ./bin/resumekit.js validate frontend-intern
-node ./bin/resumekit.js diff base frontend-intern
+node ./bin/resumekit.js export base --format html
+node ./bin/resumekit.js validate base
 ```
 
-全局安装后，可以直接使用：
+这三步会创建本地 `.resumekit` 工作区，导出示例简历 HTML，并告诉你哪些内容需要补全。
+
+## 常用命令
 
 ```bash
 resumekit init
