@@ -41,14 +41,51 @@ node ./bin/resumekit.js demo
 
 ## 常用命令
 
+创建一个本地 ResumeKit 工作区：
+
 ```bash
 resumekit init
+```
+
+创建一个面向特定岗位的简历版本：
+
+```bash
 resumekit version create frontend-intern
+```
+
+使用 `modern` 模板导出 HTML 简历：
+
+```bash
 resumekit export frontend-intern --format html --template modern
+```
+
+导出 PDF 简历：
+
+```bash
 resumekit export frontend-intern --format pdf
+```
+
+记录一次投递，并保存这次投递使用的简历版本：
+
+```bash
 resumekit apply add --company "Example Inc" --role "Frontend Intern" --version frontend-intern
+```
+
+查看投递状态摘要：
+
+```bash
 resumekit status
+```
+
+检查某个简历版本是否有缺失或薄弱内容：
+
+```bash
 resumekit validate frontend-intern
+```
+
+对比两个简历版本的差异：
+
+```bash
 resumekit diff base frontend-intern
 ```
 
