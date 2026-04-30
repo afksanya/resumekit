@@ -481,8 +481,7 @@ function createSimplePdf(sourceLines) {
         y = pageHeight - margin;
       }
       commands.push(`/F1 ${line.size} Tf`);
-      commands.push(`${margin} ${y} Td (${escapePdfText(text)}) Tj`);
-      commands.push(`${-margin} ${-lineHeight} Td`);
+      commands.push(`1 0 0 1 ${margin} ${y} Tm (${escapePdfText(text)}) Tj`);
       y -= lineHeight;
     }
   }

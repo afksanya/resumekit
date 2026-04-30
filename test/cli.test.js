@@ -58,9 +58,11 @@ test("exports html with a template and exports pdf", async () => {
 
     const html = await readFile(path.join(tmp, ".resumekit", "exports", "base.html"), "utf8");
     const pdf = await stat(path.join(tmp, ".resumekit", "exports", "base.pdf"));
+    const pdfText = await readFile(path.join(tmp, ".resumekit", "exports", "base.pdf"), "latin1");
 
     assert.match(html, /#0f766e/);
     assert.ok(pdf.size > 100);
+    assert.match(pdfText, /Tm \(Example Project/);
   } finally {
     process.chdir(cwd);
   }
