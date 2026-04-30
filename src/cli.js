@@ -431,7 +431,7 @@ function renderPdf(resume) {
     ...projectBlocks(resume.projects),
     { type: "section", text: "Skills" },
     { type: "body", text: Array.isArray(resume.skills) ? resume.skills.join(", ") : "" }
-  ].filter((block) => block.text);
+  ].filter((block) => block.text || block.left || block.detail);
 
   return createSimplePdf(blocks);
 }
@@ -441,9 +441,9 @@ function educationBlocks(items) {
   return items.flatMap((item) => [
     {
       type: "entry",
-      text: [item.school, item.degree, item.major, [item.start, item.end].filter(Boolean).join(" - ")]
-        .filter(Boolean)
-        .join(" | ")
+      left: item.school,
+      right: [item.start, item.end].filter(Boolean).join(" - "),
+      detail: [item.degree, item.major].filter(Boolean).join(", ")
     }
   ]);
 }
@@ -453,7 +453,9 @@ function experienceBlocks(items) {
   return items.flatMap((item) => [
     {
       type: "entry",
-      text: [item.company, item.role, [item.start, item.end].filter(Boolean).join(" - ")].filter(Boolean).join(" | ")
+      left: item.company,
+      right: [item.start, item.end].filter(Boolean).join(" - "),
+      detail: item.role
     },
     ...(item.highlights ?? []).map((highlight) => ({ type: "bullet", text: highlight }))
   ]);
@@ -464,7 +466,9 @@ function projectBlocks(items) {
   return items.flatMap((item) => [
     {
       type: "entry",
-      text: [item.name, item.role, Array.isArray(item.tech) ? item.tech.join(", ") : ""].filter(Boolean).join(" | ")
+      left: item.name,
+      right: item.role,
+      detail: Array.isArray(item.tech) ? item.tech.join(", ") : ""
     },
     ...(item.highlights ?? []).map((highlight) => ({ type: "bullet", text: highlight }))
   ]);
@@ -473,7 +477,7 @@ function projectBlocks(items) {
 function createSimplePdf(blocks) {
   const pageWidth = 595;
   const pageHeight = 842;
-  const margin = 54;
+  const margin = 50;
   const usableWidth = pageWidth - margin * 2;
   const pages = [];
   let y = pageHeight - margin;
@@ -493,51 +497,75 @@ function createSimplePdf(blocks) {
     commands.push(`BT /${font} ${size} Tf 1 0 0 1 ${x} ${baseline} Tm (${escapePdfText(text)}) Tj ET`);
   };
 
+  const drawCenteredText = (text, baseline, size, font = "F1") => {
+    const x = (pageWidth - estimateTextWidth(text, size)) / 2;
+    drawText(text, x, baseline, size, font);
+  };
+
+  const drawRightText = (text, baseline, size, font = "F1") => {
+    const x = pageWidth - margin - estimateTextWidth(text, size);
+    drawText(text, x, baseline, size, font);
+  };
+
   const drawRule = (baseline) => {
-    commands.push(`0.74 0.78 0.84 RG 0.8 w ${margin} ${baseline} m ${pageWidth - margin} ${baseline} l S`);
+    commands.push(`0.68 0.72 0.78 RG 0.7 w ${margin} ${baseline} m ${pageWidth - margin} ${baseline} l S`);
   };
 
   for (const block of blocks) {
     if (block.type === "title") {
       ensureSpace(48);
-      drawText(block.text, margin, y, 24, "F2");
-      y -= 18;
+      drawCenteredText(block.text, y, 24, "F2");
+      y -= 16;
       continue;
     }
 
     if (block.type === "contact") {
       ensureSpace(24);
-      drawText(block.text, margin, y, 10);
-      y -= 20;
-      drawRule(y + 7);
-      y -= 8;
+      drawCenteredText(block.text, y, 9);
+      y -= 17;
+      drawRule(y + 4);
+      y -= 10;
       continue;
     }
 
     if (block.type === "section") {
       ensureSpace(34);
-      y -= 9;
-      drawText(block.text.toUpperCase(), margin, y, 11, "F2");
+      y -= 7;
+      drawText(block.text.toUpperCase(), margin, y, 9.6, "F2");
       drawRule(y - 4);
-      y -= 17;
+      y -= 15;
       continue;
     }
 
-    const size = block.type === "entry" ? 10.5 : 10;
+    if (block.type === "entry") {
+      const left = block.left ?? block.text ?? "";
+      const right = block.right ?? "";
+      const detail = block.detail ?? "";
+      ensureSpace(detail ? 28 : 16);
+      drawText(left, margin, y, 9.8, "F2");
+      if (right) drawRightText(right, y, 9, "F2");
+      y -= 11;
+      if (detail) {
+        drawText(detail, margin, y, 9);
+        y -= 9;
+      }
+      y -= 1;
+      continue;
+    }
+
+    const size = block.type === "entry" ? 9.8 : 9.2;
     const font = block.type === "entry" ? "F2" : "F1";
-    const indent = block.type === "bullet" ? 13 : 0;
+    const indent = block.type === "bullet" ? 14 : 0;
     const prefix = block.type === "bullet" ? "- " : "";
     const width = usableWidth - indent;
     const wrapped = wrapText(`${prefix}${block.text}`, size, width);
-    ensureSpace(wrapped.length * 13 + (block.type === "entry" ? 5 : 1));
+    ensureSpace(wrapped.length * 11 + 1);
 
     for (const [index, text] of wrapped.entries()) {
       const x = margin + (index === 0 ? indent : indent + 9);
       drawText(text, x, y, size, font);
-      y -= 13;
+      y -= 11;
     }
-
-    if (block.type === "entry") y -= 2;
   }
 
   pages.push(commands.join("\n"));
@@ -563,6 +591,10 @@ function wrapText(text, fontSize, maxWidth) {
 
   if (current) lines.push(current);
   return lines.length ? lines : [""];
+}
+
+function estimateTextWidth(text, fontSize) {
+  return String(text ?? "").length * fontSize * 0.52;
 }
 
 function buildPdfDocument(pageStreams, pageWidth, pageHeight) {
