@@ -142,14 +142,31 @@ export async function main(argv) {
       return runDemo();
     case "init":
       return initWorkspace();
+    case "new":
+      return createVersion(rest[0]);
+    case "ls":
+    case "versions":
+      return listVersions();
     case "version":
       return handleVersion(rest);
+    case "html":
+      return exportResumeWithFormat(rest, "html");
+    case "pdf":
+      return exportResumeWithFormat(rest, "pdf");
+    case "json":
+      return exportResumeWithFormat(rest, "json");
     case "export":
       return exportResume(rest);
+    case "add":
+      return addApplication(rest);
     case "apply":
       return handleApply(rest);
+    case "apps":
+      return showStatus();
     case "status":
       return showStatus();
+    case "check":
+      return validateResume(rest);
     case "validate":
       return validateResume(rest);
     case "diff":
@@ -239,8 +256,8 @@ async function exportResume(args) {
   assertName(name, "version name");
   await assertWorkspace();
 
-  const format = readFlag(flags, "--format") ?? "html";
-  const templateName = readFlag(flags, "--template") ?? DEFAULT_TEMPLATE;
+  const format = readFlag(flags, "--format", "-f") ?? "html";
+  const templateName = readFlag(flags, "--template", "-t") ?? DEFAULT_TEMPLATE;
   assertTemplate(templateName);
   const resume = await readJson(versionPath(name));
 
@@ -267,20 +284,31 @@ async function exportResume(args) {
   console.log(`Exported ${output}`);
 }
 
+async function exportResumeWithFormat(args, format) {
+  const [name, ...flags] = args;
+  const normalized = [name, "--format", format, ...flags];
+  return exportResume(normalized);
+}
+
 async function handleApply(args) {
   const [subcommand, ...flags] = args;
   if (subcommand !== "add") {
     throw new Error(
-      'Usage: resumekit apply add --company <company> --role <role> --version <version> [--status submitted] [--url <url>]'
+      'Usage: resumekit add <company> <role> <version> [--status submitted] [--url <url>]\n       resumekit apply add --company <company> --role <role> --version <version> [--status submitted] [--url <url>]'
     );
   }
 
+  return addApplication(flags);
+}
+
+async function addApplication(args) {
   await assertWorkspace();
-  const company = readFlag(flags, "--company");
-  const role = readFlag(flags, "--role");
-  const version = readFlag(flags, "--version");
-  const status = readFlag(flags, "--status") ?? "submitted";
-  const url = readFlag(flags, "--url") ?? "";
+  const positional = readPositionals(args);
+  const company = readFlag(args, "--company", "-c") ?? positional[0];
+  const role = readFlag(args, "--role", "-r") ?? positional[1];
+  const version = readFlag(args, "--version", "-v") ?? positional[2];
+  const status = readFlag(args, "--status", "-s") ?? "submitted";
+  const url = readFlag(args, "--url", "-u") ?? "";
 
   assertName(company, "company");
   assertName(role, "role");
@@ -376,6 +404,16 @@ function printHelp() {
 Usage:
   resumekit demo
   resumekit init
+  resumekit new <name>
+  resumekit ls
+  resumekit html <version> [-t classic|ats|modern]
+  resumekit pdf <version> [-t classic|ats|modern]
+  resumekit add <company> <role> <version> [-s submitted] [-u <url>]
+  resumekit apps
+  resumekit check [version]
+  resumekit diff <left-version> <right-version>
+
+Long forms:
   resumekit version create <name>
   resumekit version list
   resumekit export <version> [--format html|pdf|json] [--template classic|ats|modern]
@@ -796,13 +834,25 @@ function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function readFlag(args, flag) {
-  const index = args.indexOf(flag);
+function readFlag(args, ...flags) {
+  const index = args.findIndex((arg) => flags.includes(arg));
   return index >= 0 ? args[index + 1] : undefined;
 }
 
+function readPositionals(args) {
+  const positionals = [];
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index].startsWith("-")) {
+      index += 1;
+      continue;
+    }
+    positionals.push(args[index]);
+  }
+  return positionals;
+}
+
 function assertName(value, label) {
-  if (!value || value.startsWith("--")) {
+  if (!value || value.startsWith("-")) {
     throw new Error(`Missing ${label}.`);
   }
 }

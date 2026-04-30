@@ -25,6 +25,37 @@ test("initializes workspace and creates a version", async () => {
   }
 });
 
+test("supports shorter command aliases", async () => {
+  const cwd = process.cwd();
+  const tmp = await mkdtemp(path.join(os.tmpdir(), "resumekit-"));
+  process.chdir(tmp);
+
+  try {
+    await main(["init"]);
+    await main(["new", "frontend"]);
+    await main(["html", "frontend", "-t", "modern"]);
+    process.env.RESUMEKIT_PDF_ENGINE = "simple";
+    await main(["pdf", "frontend"]);
+    await main(["add", "Example", "Engineer", "frontend"]);
+    await main(["check", "frontend"]);
+
+    const html = await readFile(path.join(tmp, ".resumekit", "exports", "frontend.html"), "utf8");
+    const pdf = await stat(path.join(tmp, ".resumekit", "exports", "frontend.pdf"));
+    const applications = JSON.parse(
+      await readFile(path.join(tmp, ".resumekit", "applications.json"), "utf8")
+    );
+
+    assert.match(html, /#0f766e/);
+    assert.ok(pdf.size > 100);
+    assert.equal(applications[0].company, "Example");
+    assert.equal(applications[0].role, "Engineer");
+    assert.equal(applications[0].version, "frontend");
+  } finally {
+    delete process.env.RESUMEKIT_PDF_ENGINE;
+    process.chdir(cwd);
+  }
+});
+
 test("records an application", async () => {
   const cwd = process.cwd();
   const tmp = await mkdtemp(path.join(os.tmpdir(), "resumekit-"));
