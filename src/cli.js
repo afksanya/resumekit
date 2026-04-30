@@ -1,7 +1,13 @@
-import { mkdir, readFile, writeFile, access } from "node:fs/promises";
+import { mkdir, readFile, writeFile, access, mkdtemp } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { execFile } from "node:child_process";
+import os from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
+import { pathToFileURL } from "node:url";
 import { fileURLToPath } from "node:url";
+
+const execFileAsync = promisify(execFile);
 
 const WORKSPACE_DIR = ".resumekit";
 const VERSION_DIR = "versions";
@@ -247,7 +253,7 @@ async function exportResume(args) {
 
   if (format === "pdf") {
     const output = path.join(workspacePath(), EXPORT_DIR, `${name}.pdf`);
-    await writeFile(output, renderPdf(resume));
+    await exportPdf(resume, templateName, output);
     console.log(`Exported ${output}`);
     return;
   }
@@ -414,6 +420,59 @@ function renderHtml(resume, templateName = DEFAULT_TEMPLATE) {
   </main>
 </body>
 </html>`;
+}
+
+async function exportPdf(resume, templateName, output) {
+  if (process.env.RESUMEKIT_PDF_ENGINE !== "simple") {
+    const browser = await findBrowserExecutable();
+    if (browser) {
+      try {
+        await exportPdfFromHtml(browser, renderHtml(resume, templateName), output);
+        return;
+      } catch (error) {
+        console.warn(`HTML-to-PDF export failed, using built-in fallback: ${error.message}`);
+      }
+    }
+  }
+
+  await writeFile(output, renderPdf(resume));
+}
+
+async function exportPdfFromHtml(browser, html, output) {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "resumekit-print-"));
+  const input = path.join(dir, "resume.html");
+  await writeFile(input, html, "utf8");
+
+  await execFileAsync(browser, [
+    "--headless=new",
+    "--disable-gpu",
+    "--no-pdf-header-footer",
+    `--print-to-pdf=${output}`,
+    pathToFileURL(input).href
+  ]);
+}
+
+async function findBrowserExecutable() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser"
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch {
+      // Try the next known browser path.
+    }
+  }
+
+  return null;
 }
 
 function renderPdf(resume) {

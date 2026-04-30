@@ -28,10 +28,10 @@ resumekit export base --format html --template modern
 
 ## PDF
 
-PDF export is currently a built-in text renderer:
+PDF export uses the same HTML templates when Chrome, Edge, or Chromium is available:
 
 ```bash
-resumekit export base --format pdf
+resumekit export base --format pdf --template modern
 ```
 
-The current PDF renderer is dependency-free and works well for ASCII resumes. Richer typography and CJK text support are planned for a later browser-rendered PDF exporter.
+If no supported browser is available, ResumeKit falls back to a dependency-free text PDF renderer.

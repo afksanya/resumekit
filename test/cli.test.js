@@ -54,7 +54,9 @@ test("exports html with a template and exports pdf", async () => {
   try {
     await main(["init"]);
     await main(["export", "base", "--format", "html", "--template", "modern"]);
+    process.env.RESUMEKIT_PDF_ENGINE = "simple";
     await main(["export", "base", "--format", "pdf"]);
+    delete process.env.RESUMEKIT_PDF_ENGINE;
 
     const html = await readFile(path.join(tmp, ".resumekit", "exports", "base.html"), "utf8");
     const pdf = await stat(path.join(tmp, ".resumekit", "exports", "base.pdf"));
@@ -64,6 +66,7 @@ test("exports html with a template and exports pdf", async () => {
     assert.ok(pdf.size > 100);
     assert.match(pdfText, /Tm \(Example Project/);
   } finally {
+    delete process.env.RESUMEKIT_PDF_ENGINE;
     process.chdir(cwd);
   }
 });

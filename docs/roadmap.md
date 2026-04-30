@@ -7,6 +7,7 @@
 - JSON resume versions
 - HTML, PDF, and JSON export
 - Built-in HTML templates
+- HTML-template-based PDF export with fallback renderer
 - Application tracking
 - Version diff
 - Basic validation
@@ -14,7 +15,7 @@
 ## 0.2
 
 - Markdown input support
-- PDF export with richer typography and CJK text support
+- PDF export with richer browser configuration and CJK text support
 - More templates
 - Configurable validation rules
 
