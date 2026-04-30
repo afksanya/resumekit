@@ -71,6 +71,63 @@ const SAMPLE_RESUME = {
   skills: ["JavaScript", "Node.js", "Git"]
 };
 
+const DEMO_RESUME = {
+  profile: {
+    name: "Alex Chen",
+    email: "alex.chen@example.com",
+    phone: "+1 415 555 0198",
+    location: "San Francisco, CA",
+    links: {
+      github: "https://github.com/alexchen",
+      portfolio: "https://alexchen.dev"
+    }
+  },
+  summary:
+    "Frontend engineer focused on local-first productivity tools, polished user workflows, and reliable TypeScript applications.",
+  education: [
+    {
+      school: "University of California, Berkeley",
+      degree: "B.S.",
+      major: "Computer Science",
+      start: "2021",
+      end: "2025"
+    }
+  ],
+  experience: [
+    {
+      company: "Northstar Labs",
+      role: "Frontend Engineer Intern",
+      start: "2025-06",
+      end: "2025-09",
+      highlights: [
+        "Built a React dashboard used by 80+ internal operators to review customer onboarding tasks.",
+        "Reduced repeated API requests by 38% by introducing query caching and loading-state consolidation."
+      ]
+    }
+  ],
+  projects: [
+    {
+      name: "ResumeKit",
+      role: "Creator",
+      tech: ["Node.js", "JavaScript", "HTML", "PDF"],
+      highlights: [
+        "Designed a local-first CLI for managing resume versions, exports, validation, and job applications.",
+        "Implemented HTML and dependency-free PDF export so users can preview a resume without setup friction."
+      ]
+    },
+    {
+      name: "Campus Market",
+      role: "Full-stack Developer",
+      tech: ["React", "TypeScript", "SQLite"],
+      highlights: [
+        "Built listing, search, and order flows for a student marketplace prototype.",
+        "Added image compression before upload, cutting average upload size by 42% in testing."
+      ]
+    }
+  ],
+  skills: ["TypeScript", "React", "Node.js", "SQLite", "Git", "Product Thinking"]
+};
+
 export async function main(argv) {
   const [command, ...rest] = argv;
 
@@ -99,7 +156,7 @@ export async function main(argv) {
   }
 }
 
-async function initWorkspace() {
+async function initWorkspace(resume = SAMPLE_RESUME) {
   const root = workspacePath();
   if (existsSync(root)) {
     throw new Error("A ResumeKit workspace already exists here.");
@@ -107,8 +164,8 @@ async function initWorkspace() {
 
   await mkdir(path.join(root, VERSION_DIR), { recursive: true });
   await mkdir(path.join(root, EXPORT_DIR), { recursive: true });
-  await writeJson(path.join(root, "resume.json"), SAMPLE_RESUME);
-  await writeJson(path.join(root, VERSION_DIR, "base.json"), SAMPLE_RESUME);
+  await writeJson(path.join(root, "resume.json"), resume);
+  await writeJson(path.join(root, VERSION_DIR, "base.json"), resume);
   await writeJson(path.join(root, "applications.json"), []);
 
   console.log("ResumeKit workspace created.");
@@ -117,12 +174,12 @@ async function initWorkspace() {
 
 async function runDemo() {
   if (!existsSync(workspacePath())) {
-    await initWorkspace();
+    await initWorkspace(DEMO_RESUME);
   } else {
     console.log("Using existing ResumeKit workspace.");
   }
 
-  await exportResume(["base", "--format", "html"]);
+  await exportResume(["base", "--format", "html", "--template", "modern"]);
   await validateResume(["base"]);
   console.log(`Open ${path.join(WORKSPACE_DIR, EXPORT_DIR, "base.html")} to preview the exported resume.`);
 }

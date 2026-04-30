@@ -88,7 +88,9 @@ test("runs the demo command", async () => {
     await main(["demo"]);
 
     const html = await readFile(path.join(tmp, ".resumekit", "exports", "base.html"), "utf8");
-    assert.match(html, /Your Name/);
+    assert.match(html, /Alex Chen/);
+    assert.match(html, /ResumeKit/);
+    assert.match(html, /Northstar Labs/);
   } finally {
     process.chdir(cwd);
   }
