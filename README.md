@@ -1,5 +1,7 @@
 # ResumeKit
 
+[中文说明](./README.zh-CN.md)
+
 ResumeKit is a local-first resume version manager and job application tracker.
 
 It helps job seekers keep structured resume content, create role-specific resume versions, export readable resumes, compare versions, and remember which resume was sent to which company.
@@ -71,6 +73,12 @@ resumekit diff base frontend-intern
 - Web UI with resume preview
 - Community template system
 - Git integration
+
+## Contributing
+
+Contributions are welcome. Good first issues include improving templates, adding validation rules, refining docs, and expanding tests.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup and contribution guidelines.
 
 ## License
 
