@@ -75,6 +75,8 @@ export async function main(argv) {
   const [command, ...rest] = argv;
 
   switch (command) {
+    case "demo":
+      return runDemo();
     case "init":
       return initWorkspace();
     case "version":
@@ -111,6 +113,18 @@ async function initWorkspace() {
 
   console.log("ResumeKit workspace created.");
   console.log(`Edit ${path.join(WORKSPACE_DIR, "resume.json")} to update your base resume.`);
+}
+
+async function runDemo() {
+  if (!existsSync(workspacePath())) {
+    await initWorkspace();
+  } else {
+    console.log("Using existing ResumeKit workspace.");
+  }
+
+  await exportResume(["base", "--format", "html"]);
+  await validateResume(["base"]);
+  console.log(`Open ${path.join(WORKSPACE_DIR, EXPORT_DIR, "base.html")} to preview the exported resume.`);
 }
 
 async function handleVersion(args) {
@@ -297,6 +311,7 @@ function printHelp() {
   console.log(`ResumeKit
 
 Usage:
+  resumekit demo
   resumekit init
   resumekit version create <name>
   resumekit version list

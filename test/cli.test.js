@@ -78,3 +78,18 @@ test("validates a resume version", async () => {
     process.chdir(cwd);
   }
 });
+
+test("runs the demo command", async () => {
+  const cwd = process.cwd();
+  const tmp = await mkdtemp(path.join(os.tmpdir(), "resumekit-"));
+  process.chdir(tmp);
+
+  try {
+    await main(["demo"]);
+
+    const html = await readFile(path.join(tmp, ".resumekit", "exports", "base.html"), "utf8");
+    assert.match(html, /Your Name/);
+  } finally {
+    process.chdir(cwd);
+  }
+});
