@@ -418,75 +418,128 @@ function renderHtml(resume, templateName = DEFAULT_TEMPLATE) {
 
 function renderPdf(resume) {
   const profile = resume.profile ?? {};
-  const lines = [
-    { text: profile.name ?? "Resume", size: 20 },
-    { text: [profile.email, profile.phone, profile.location].filter(Boolean).join(" | "), size: 10 },
-    sectionLine("Summary"),
-    ...textLines(resume.summary),
-    sectionLine("Education"),
-    ...itemLines(resume.education, (item) => [
-      [item.school, item.degree, item.major, [item.start, item.end].filter(Boolean).join(" - ")]
+  const blocks = [
+    { type: "title", text: profile.name ?? "Resume" },
+    { type: "contact", text: [profile.email, profile.phone, profile.location].filter(Boolean).join(" | ") },
+    { type: "section", text: "Summary" },
+    { type: "body", text: resume.summary },
+    { type: "section", text: "Education" },
+    ...educationBlocks(resume.education),
+    { type: "section", text: "Experience" },
+    ...experienceBlocks(resume.experience),
+    { type: "section", text: "Projects" },
+    ...projectBlocks(resume.projects),
+    { type: "section", text: "Skills" },
+    { type: "body", text: Array.isArray(resume.skills) ? resume.skills.join(", ") : "" }
+  ].filter((block) => block.text);
+
+  return createSimplePdf(blocks);
+}
+
+function educationBlocks(items) {
+  if (!Array.isArray(items)) return [];
+  return items.flatMap((item) => [
+    {
+      type: "entry",
+      text: [item.school, item.degree, item.major, [item.start, item.end].filter(Boolean).join(" - ")]
         .filter(Boolean)
         .join(" | ")
-    ]),
-    sectionLine("Experience"),
-    ...itemLines(resume.experience, (item) => [
-      [item.company, item.role, [item.start, item.end].filter(Boolean).join(" - ")].filter(Boolean).join(" | "),
-      ...(item.highlights ?? []).map((highlight) => `- ${highlight}`)
-    ]),
-    sectionLine("Projects"),
-    ...itemLines(resume.projects, (item) => [
-      [item.name, item.role, Array.isArray(item.tech) ? item.tech.join(", ") : ""].filter(Boolean).join(" | "),
-      ...(item.highlights ?? []).map((highlight) => `- ${highlight}`)
-    ]),
-    sectionLine("Skills"),
-    ...textLines(Array.isArray(resume.skills) ? resume.skills.join(", ") : "")
-  ].filter((line) => line.text !== "");
-
-  return createSimplePdf(lines);
+    }
+  ]);
 }
 
-function sectionLine(text) {
-  return { text, size: 13, gapBefore: 14 };
-}
-
-function textLines(text) {
-  return text ? [{ text, size: 10 }] : [];
-}
-
-function itemLines(items, mapper) {
+function experienceBlocks(items) {
   if (!Array.isArray(items)) return [];
-  return items.flatMap((item) => mapper(item).filter(Boolean).map((text) => ({ text, size: 10 })));
+  return items.flatMap((item) => [
+    {
+      type: "entry",
+      text: [item.company, item.role, [item.start, item.end].filter(Boolean).join(" - ")].filter(Boolean).join(" | ")
+    },
+    ...(item.highlights ?? []).map((highlight) => ({ type: "bullet", text: highlight }))
+  ]);
 }
 
-function createSimplePdf(sourceLines) {
+function projectBlocks(items) {
+  if (!Array.isArray(items)) return [];
+  return items.flatMap((item) => [
+    {
+      type: "entry",
+      text: [item.name, item.role, Array.isArray(item.tech) ? item.tech.join(", ") : ""].filter(Boolean).join(" | ")
+    },
+    ...(item.highlights ?? []).map((highlight) => ({ type: "bullet", text: highlight }))
+  ]);
+}
+
+function createSimplePdf(blocks) {
   const pageWidth = 595;
   const pageHeight = 842;
   const margin = 54;
   const usableWidth = pageWidth - margin * 2;
-  const lineHeight = 15;
   const pages = [];
   let y = pageHeight - margin;
-  let commands = ["BT", "/F1 10 Tf"];
+  let commands = [];
 
-  for (const line of sourceLines) {
-    const wrapped = wrapText(line.text, line.size, usableWidth);
-    if (line.gapBefore) y -= line.gapBefore;
+  const newPage = () => {
+    pages.push(commands.join("\n"));
+    commands = [];
+    y = pageHeight - margin;
+  };
 
-    for (const text of wrapped) {
-      if (y < margin) {
-        commands.push("ET");
-        pages.push(commands.join("\n"));
-        commands = ["BT", "/F1 10 Tf"];
-        y = pageHeight - margin;
-      }
-      commands.push(`/F1 ${line.size} Tf`);
-      commands.push(`1 0 0 1 ${margin} ${y} Tm (${escapePdfText(text)}) Tj`);
-      y -= lineHeight;
+  const ensureSpace = (height) => {
+    if (y - height < margin) newPage();
+  };
+
+  const drawText = (text, x, baseline, size, font = "F1") => {
+    commands.push(`BT /${font} ${size} Tf 1 0 0 1 ${x} ${baseline} Tm (${escapePdfText(text)}) Tj ET`);
+  };
+
+  const drawRule = (baseline) => {
+    commands.push(`0.74 0.78 0.84 RG 0.8 w ${margin} ${baseline} m ${pageWidth - margin} ${baseline} l S`);
+  };
+
+  for (const block of blocks) {
+    if (block.type === "title") {
+      ensureSpace(48);
+      drawText(block.text, margin, y, 24, "F2");
+      y -= 18;
+      continue;
     }
+
+    if (block.type === "contact") {
+      ensureSpace(24);
+      drawText(block.text, margin, y, 10);
+      y -= 20;
+      drawRule(y + 7);
+      y -= 8;
+      continue;
+    }
+
+    if (block.type === "section") {
+      ensureSpace(34);
+      y -= 9;
+      drawText(block.text.toUpperCase(), margin, y, 11, "F2");
+      drawRule(y - 4);
+      y -= 17;
+      continue;
+    }
+
+    const size = block.type === "entry" ? 10.5 : 10;
+    const font = block.type === "entry" ? "F2" : "F1";
+    const indent = block.type === "bullet" ? 13 : 0;
+    const prefix = block.type === "bullet" ? "- " : "";
+    const width = usableWidth - indent;
+    const wrapped = wrapText(`${prefix}${block.text}`, size, width);
+    ensureSpace(wrapped.length * 13 + (block.type === "entry" ? 5 : 1));
+
+    for (const [index, text] of wrapped.entries()) {
+      const x = margin + (index === 0 ? indent : indent + 9);
+      drawText(text, x, y, size, font);
+      y -= 13;
+    }
+
+    if (block.type === "entry") y -= 2;
   }
 
-  commands.push("ET");
   pages.push(commands.join("\n"));
 
   return buildPdfDocument(pages, pageWidth, pageHeight);
@@ -521,13 +574,14 @@ function buildPdfDocument(pageStreams, pageWidth, pageHeight) {
 
   const catalogId = addObject("<< /Type /Catalog /Pages 2 0 R >>");
   const pagesId = addObject("");
-  const fontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const regularFontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const boldFontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
   const pageIds = [];
 
   for (const stream of pageStreams) {
     const streamId = addObject(`<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream`);
     const pageId = addObject(
-      `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${streamId} 0 R >>`
+      `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${regularFontId} 0 R /F2 ${boldFontId} 0 R >> >> /Contents ${streamId} 0 R >>`
     );
     pageIds.push(pageId);
   }
