@@ -168,14 +168,14 @@ These examples use the future installed command form. In local development, repl
 
 ## Templates
 
-| Template | Best for |
-| --- | --- |
-| `classic` | A balanced traditional resume. |
-| `ats` | Plain, parser-friendly applications. |
-| `modern` | A clean contemporary resume. |
-| `compact` | Dense one-page resumes. |
-| `sidebar` | A two-column resume with skills and education in a sidebar. |
-| `executive` | Formal senior or leadership resumes. |
+| Template | Preview | Best for |
+| --- | --- | --- |
+| `classic` | <img src="docs/templates/classic.png" width="260" alt="Classic resume template preview"> | A balanced traditional resume. |
+| `ats` | <img src="docs/templates/ats.png" width="260" alt="ATS resume template preview"> | Plain, parser-friendly applications. |
+| `modern` | <img src="docs/templates/modern.png" width="260" alt="Modern resume template preview"> | A clean contemporary resume. |
+| `compact` | <img src="docs/templates/compact.png" width="260" alt="Compact resume template preview"> | Dense one-page resumes. |
+| `sidebar` | <img src="docs/templates/sidebar.png" width="260" alt="Sidebar resume template preview"> | A two-column resume with skills and education in a sidebar. |
+| `executive` | <img src="docs/templates/executive.png" width="260" alt="Executive resume template preview"> | Formal senior or leadership resumes. |
 
 The newer templates are original zero-dependency ResumeKit layouts inspired by common open-source resume patterns from projects such as Reactive Resume, JSON Resume themes, html-resume, and Start Bootstrap Resume. Their ideas were adapted into ResumeKit's own HTML/CSS instead of copying third-party template code. See [TEMPLATE_SOURCES.md](./TEMPLATE_SOURCES.md) for source notes.
 
@@ -389,14 +389,14 @@ node /path/to/resumekit/bin/resumekit.js diff base frontend-intern
 
 ## 模板
 
-| 模板 | 适合场景 |
-| --- | --- |
-| `classic` | 传统均衡型简历。 |
-| `ats` | 更适合机器解析的朴素简历。 |
-| `modern` | 干净现代的简历。 |
-| `compact` | 内容较多、希望压到一页的简历。 |
-| `sidebar` | 技能和教育放侧栏的双栏简历。 |
-| `executive` | 更正式的资深岗位或管理岗位简历。 |
+| 模板 | 预览 | 适合场景 |
+| --- | --- | --- |
+| `classic` | <img src="docs/templates/classic.png" width="260" alt="Classic 简历模板预览"> | 传统均衡型简历。 |
+| `ats` | <img src="docs/templates/ats.png" width="260" alt="ATS 简历模板预览"> | 更适合机器解析的朴素简历。 |
+| `modern` | <img src="docs/templates/modern.png" width="260" alt="Modern 简历模板预览"> | 干净现代的简历。 |
+| `compact` | <img src="docs/templates/compact.png" width="260" alt="Compact 简历模板预览"> | 内容较多、希望压到一页的简历。 |
+| `sidebar` | <img src="docs/templates/sidebar.png" width="260" alt="Sidebar 简历模板预览"> | 技能和教育放侧栏的双栏简历。 |
+| `executive` | <img src="docs/templates/executive.png" width="260" alt="Executive 简历模板预览"> | 更正式的资深岗位或管理岗位简历。 |
 
 新增模板是 ResumeKit 自己实现的零依赖 HTML/CSS 布局，参考了 Reactive Resume、JSON Resume themes、html-resume、Start Bootstrap Resume 等开源项目里常见的简历设计模式，但没有直接复制第三方模板代码。来源说明见 [TEMPLATE_SOURCES.md](./TEMPLATE_SOURCES.md)。
 
