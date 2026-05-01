@@ -21,7 +21,8 @@ const TEMPLATES = {
     muted: "#556070",
     accent: "#2f5f9f",
     chip: "#eef2f7",
-    maxWidth: "820px"
+    maxWidth: "820px",
+    description: "Balanced traditional resume"
   },
   ats: {
     font: "Georgia, 'Times New Roman', serif",
@@ -29,7 +30,8 @@ const TEMPLATES = {
     muted: "#333333",
     accent: "#111111",
     chip: "#ffffff",
-    maxWidth: "760px"
+    maxWidth: "760px",
+    description: "Plain text-friendly ATS layout"
   },
   modern: {
     font: "Inter, Arial, sans-serif",
@@ -37,7 +39,35 @@ const TEMPLATES = {
     muted: "#607086",
     accent: "#0f766e",
     chip: "#e6f3f1",
-    maxWidth: "860px"
+    maxWidth: "860px",
+    description: "Clean contemporary layout"
+  },
+  compact: {
+    font: "Arial, sans-serif",
+    text: "#16181d",
+    muted: "#555f6d",
+    accent: "#334155",
+    chip: "#f3f4f6",
+    maxWidth: "760px",
+    description: "Dense one-page layout"
+  },
+  sidebar: {
+    font: "Inter, Arial, sans-serif",
+    text: "#172033",
+    muted: "#64748b",
+    accent: "#2563eb",
+    chip: "#dbeafe",
+    maxWidth: "900px",
+    description: "Two-column layout with a sidebar"
+  },
+  executive: {
+    font: "Georgia, 'Times New Roman', serif",
+    text: "#18181b",
+    muted: "#52525b",
+    accent: "#7c2d12",
+    chip: "#faf3ef",
+    maxWidth: "820px",
+    description: "Formal serif layout for senior roles"
   }
 };
 
@@ -406,8 +436,8 @@ Usage:
   resumekit init
   resumekit new <name>
   resumekit ls
-  resumekit html <version> [-t classic|ats|modern]
-  resumekit pdf <version> [-t classic|ats|modern]
+  resumekit html <version> [-t ${templateNames()}]
+  resumekit pdf <version> [-t ${templateNames()}]
   resumekit add <company> <role> <version> [-s submitted] [-u <url>]
   resumekit apps
   resumekit check [version]
@@ -416,7 +446,7 @@ Usage:
 Long forms:
   resumekit version create <name>
   resumekit version list
-  resumekit export <version> [--format html|pdf|json] [--template classic|ats|modern]
+  resumekit export <version> [--format html|pdf|json] [--template ${templateNames()}]
   resumekit apply add --company <company> --role <role> --version <version> [--status submitted] [--url <url>]
   resumekit status
   resumekit validate [version]
@@ -427,6 +457,16 @@ Long forms:
 function renderHtml(resume, templateName = DEFAULT_TEMPLATE) {
   const profile = resume.profile ?? {};
   const template = TEMPLATES[templateName];
+  const summary = section("Summary", paragraph(resume.summary));
+  const education = section("Education", listItems(resume.education, renderEducation));
+  const experience = section("Experience", listItems(resume.experience, renderExperience));
+  const projects = section("Projects", listItems(resume.projects, renderProject));
+  const skills = section("Skills", tagList(resume.skills));
+  const content =
+    templateName === "sidebar"
+      ? `<div class="layout"><aside>${skills}${education}</aside><div>${summary}${experience}${projects}</div></div>`
+      : `${summary}${education}${experience}${projects}${skills}`;
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -434,30 +474,79 @@ function renderHtml(resume, templateName = DEFAULT_TEMPLATE) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(profile.name ?? "Resume")}</title>
   <style>
-    body { color: ${template.text}; font-family: ${template.font}; line-height: 1.5; margin: 0; }
-    main { margin: 40px auto; max-width: ${template.maxWidth}; padding: 0 24px; }
-    h1 { font-size: 34px; margin: 0 0 6px; }
-    h2 { border-bottom: 1px solid ${template.accent}; color: ${template.accent}; font-size: 18px; margin-top: 28px; padding-bottom: 6px; }
-    h3 { font-size: 16px; margin-bottom: 4px; }
-    p, li { font-size: 14px; }
-    .meta { color: ${template.muted}; font-size: 14px; }
-    .tags { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; }
-    .tags li { background: ${template.chip}; border: 1px solid #d8dee9; border-radius: 4px; display: block; padding: 4px 8px; }
-    @media print { body { color: #111; } main { margin: 24px auto; } }
+${templateCss(templateName, template)}
   </style>
 </head>
-<body>
+<body class="template-${templateName}">
   <main>
     <h1>${escapeHtml(profile.name ?? "")}</h1>
-    <div class="meta">${escapeHtml([profile.email, profile.phone, profile.location].filter(Boolean).join(" · "))}</div>
-    ${section("Summary", paragraph(resume.summary))}
-    ${section("Education", listItems(resume.education, renderEducation))}
-    ${section("Experience", listItems(resume.experience, renderExperience))}
-    ${section("Projects", listItems(resume.projects, renderProject))}
-    ${section("Skills", tagList(resume.skills))}
+    <div class="meta">${escapeHtml(contactLine(profile))}</div>
+    ${content}
   </main>
 </body>
 </html>`;
+}
+
+function templateCss(templateName, template) {
+  const base = `    body { color: ${template.text}; font-family: ${template.font}; line-height: 1.5; margin: 0; }
+    main { margin: 40px auto; max-width: ${template.maxWidth}; padding: 0 24px; }
+    h1 { font-size: 34px; letter-spacing: 0; line-height: 1.1; margin: 0 0 6px; }
+    h2 { border-bottom: 1px solid ${template.accent}; color: ${template.accent}; font-size: 18px; letter-spacing: 0; margin: 28px 0 10px; padding-bottom: 6px; }
+    h3 { font-size: 16px; letter-spacing: 0; margin: 0 0 4px; }
+    article { margin: 0 0 14px; }
+    p, li { font-size: 14px; }
+    p { margin: 0 0 8px; }
+    ul { margin: 6px 0 0; padding-left: 20px; }
+    .meta { color: ${template.muted}; font-size: 14px; margin-bottom: 16px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; }
+    .tags li { background: ${template.chip}; border: 1px solid #d8dee9; border-radius: 4px; display: block; padding: 4px 8px; }
+    @media print { body { color: #111; } main { margin: 24px auto; } }`;
+
+  const variants = {
+    classic: "",
+    ats: `    h1 { font-size: 30px; text-align: center; }
+    h2 { border-bottom: 1px solid #111; text-transform: uppercase; }
+    .meta { color: #222; text-align: center; }
+    .tags li { border: 0; padding: 0; }
+    .tags li::after { content: ","; }
+    .tags li:last-child::after { content: ""; }`,
+    modern: `    body { background: #f8fafc; }
+    main { background: #ffffff; box-shadow: 0 16px 45px rgba(15, 23, 42, 0.08); margin: 32px auto; padding: 36px; }
+    h1 { color: #0f172a; }
+    h2 { font-size: 13px; text-transform: uppercase; }
+    .tags li { border-color: #b7ddda; }`,
+    compact: `    main { margin: 24px auto; max-width: 760px; padding: 0 20px; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 13px; margin: 16px 0 7px; text-transform: uppercase; }
+    h3 { font-size: 14px; }
+    article { margin-bottom: 8px; }
+    p, li, .meta { font-size: 12.5px; }
+    ul { margin-top: 3px; }
+    .tags { gap: 5px; }
+    .tags li { padding: 2px 6px; }`,
+    sidebar: `    main { padding: 0 28px; }
+    h1 { color: #0f172a; font-size: 36px; }
+    h2 { font-size: 13px; text-transform: uppercase; }
+    .layout { display: grid; gap: 28px; grid-template-columns: 230px 1fr; }
+    aside { background: #eff6ff; border-left: 4px solid ${template.accent}; padding: 16px; }
+    aside h2 { margin-top: 0; }
+    aside .tags { display: block; }
+    aside .tags li { margin-bottom: 6px; }
+    @media (max-width: 720px) { .layout { display: block; } aside { margin-bottom: 20px; } }`,
+    executive: `    main { border-top: 5px solid ${template.accent}; }
+    h1 { font-size: 35px; text-transform: uppercase; }
+    h2 { border-bottom: 2px solid ${template.accent}; font-size: 15px; text-transform: uppercase; }
+    h3 { font-size: 15px; }
+    .meta { border-bottom: 1px solid #e7e5e4; padding-bottom: 12px; }
+    .tags li { border-color: #ead7ce; }`
+  };
+
+  return `${base}\n${variants[templateName] ?? ""}`;
+}
+
+function contactLine(profile) {
+  const links = Object.values(profile.links ?? {}).filter(Boolean);
+  return [profile.email, profile.phone, profile.location, ...links].filter(Boolean).join(" · ");
 }
 
 async function exportPdf(resume, templateName, output) {
@@ -859,10 +948,12 @@ function assertName(value, label) {
 
 function assertTemplate(templateName) {
   if (!TEMPLATES[templateName]) {
-    throw new Error(
-      `Unknown template: ${templateName}. Available templates: ${Object.keys(TEMPLATES).join(", ")}.`
-    );
+    throw new Error(`Unknown template: ${templateName}. Available templates: ${templateNames(", ")}.`);
   }
+}
+
+function templateNames(separator = "|") {
+  return Object.keys(TEMPLATES).join(separator);
 }
 
 async function assertWorkspace() {

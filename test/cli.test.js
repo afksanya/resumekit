@@ -102,6 +102,25 @@ test("exports html with a template and exports pdf", async () => {
   }
 });
 
+test("exports the expanded html templates", async () => {
+  const cwd = process.cwd();
+  const tmp = await mkdtemp(path.join(os.tmpdir(), "resumekit-"));
+  process.chdir(tmp);
+
+  try {
+    await main(["demo"]);
+
+    for (const template of ["compact", "sidebar", "executive"]) {
+      await main(["html", "base", "-t", template]);
+      const html = await readFile(path.join(tmp, ".resumekit", "exports", "base.html"), "utf8");
+      assert.match(html, new RegExp(`template-${template}`));
+      assert.match(html, /Alex Chen/);
+    }
+  } finally {
+    process.chdir(cwd);
+  }
+});
+
 test("validates a resume version", async () => {
   const cwd = process.cwd();
   const tmp = await mkdtemp(path.join(os.tmpdir(), "resumekit-"));
